@@ -9,13 +9,20 @@ GET_URL = "https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatement
 
 
 def _request_statement(token: str, query_id: str) -> str:
-    resp = httpx.get(FLEX_URL, params={"t": token, "q": query_id, "v": "3"}, timeout=30)
-    resp.raise_for_status()
-    root = ET.fromstring(resp.text)
-    status = root.findtext("Status")
-    if status != "Success":
-        raise RuntimeError(f"IBKR Flex request failed: {root.findtext('ErrorMessage')}")
-    return root.findtext("ReferenceCode")
+    import time
+    for _ in range(6):
+        resp = httpx.get(FLEX_URL, params={"t": token, "q": query_id, "v": "3"}, timeout=30)
+        resp.raise_for_status()
+        root = ET.fromstring(resp.text)
+        status = root.findtext("Status")
+        if status == "Success":
+            return root.findtext("ReferenceCode")
+        error_code = root.findtext("ErrorCode")
+        if error_code in ("1001", "1002", "1003"):
+            time.sleep(10)
+            continue
+        raise RuntimeError(f"IBKR Flex request failed ({error_code}): {root.findtext('ErrorMessage')}")
+    raise TimeoutError("IBKR Flex request timed out")
 
 
 def _get_statement(token: str, reference: str) -> ET.Element:
