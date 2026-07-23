@@ -13,9 +13,35 @@ log = logging.getLogger("fetch")
 COINGECKO_URL = "https://api.coingecko.com/api/v3/simple/price"
 
 KRAKEN_TO_CG = {
-    "XXBT": "bitcoin", "XETH": "ethereum", "ZUSD": None, "ZEUR": None,
-    "USDT": None, "USDC": None, "XBT": "bitcoin", "ETH": "ethereum",
-    "SOL": "solana", "DOT": "polkadot", "ADA": "cardano",
+    # Bitcoin / Ethereum
+    "XXBT": "bitcoin", "XBT": "bitcoin",
+    "XETH": "ethereum", "ETH": "ethereum",
+    # Stablecoins / fiat (price = 1 USD)
+    "ZUSD": None, "ZEUR": None, "USDT": None, "USDC": None, "DAI": None,
+    # Altcoins
+    "SOL": "solana",
+    "DOT": "polkadot",
+    "ADA": "cardano",
+    "ALGO": "algorand",
+    "ARB": "arbitrum",
+    "AVAX": "avalanche-2",
+    "BNB": "binancecoin",
+    "CAKE": "pancakeswap-token",
+    "CHZ": "chiliz",
+    "OP": "optimism",
+    "POL": "matic-network",
+    "MATIC": "matic-network",
+    "WLD": "worldcoin-wld",
+    "XETC": "ethereum-classic",
+    "ETC": "ethereum-classic",
+    "LINK": "chainlink",
+    "UNI": "uniswap",
+    "AAVE": "aave",
+    "ATOM": "cosmos",
+    "XRP": "ripple",
+    "XXRP": "ripple",
+    "LTC": "litecoin",
+    "XLTC": "litecoin",
 }
 
 
