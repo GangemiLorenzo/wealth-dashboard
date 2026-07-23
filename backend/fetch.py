@@ -45,30 +45,36 @@ KRAKEN_TO_CG = {
 }
 
 
-def get_crypto_prices(assets: list[str]) -> dict[str, float]:
+def get_crypto_prices(assets: list[str]) -> tuple[dict[str, float], dict[str, float]]:
     ids = [KRAKEN_TO_CG.get(a) for a in assets if KRAKEN_TO_CG.get(a)]
     if not ids:
-        return {}
-    resp = httpx.get(COINGECKO_URL, params={"ids": ",".join(set(ids)), "vs_currencies": "usd"}, timeout=10)
+        return {}, {}
+    resp = httpx.get(COINGECKO_URL, params={"ids": ",".join(set(ids)), "vs_currencies": "usd,eur"}, timeout=10)
     resp.raise_for_status()
-    return {k: v["usd"] for k, v in resp.json().items()}
+    data = resp.json()
+    usd = {k: v["usd"] for k, v in data.items()}
+    eur = {k: v["eur"] for k, v in data.items()}
+    return usd, eur
 
 
 def fetch_kraken(conn):
     log.info("Fetching Kraken balances...")
     balances = kraken.get_balances()
-    prices = get_crypto_prices(list(balances.keys()))
+    prices_usd, prices_eur = get_crypto_prices(list(balances.keys()))
 
     rows = []
     for asset, amount in balances.items():
         cg_id = KRAKEN_TO_CG.get(asset)
-        price = prices.get(cg_id, 1.0) if cg_id else 1.0
-        is_stable = asset in ("ZUSD", "USDT", "USDC", "ZEUR")
+        is_stable = asset in ("ZUSD", "USDT", "USDC", "DAI")
+        is_eur = asset in ("ZEUR",)
+        price_usd = prices_usd.get(cg_id, 1.0) if cg_id else 1.0
+        price_eur = prices_eur.get(cg_id, 1.0) if cg_id else 1.0
         rows.append({
             "asset": asset,
             "amount": amount,
-            "value_usd": amount * price if not is_stable else amount,
-            "currency": "USD",
+            "value_usd": amount if is_stable else amount * price_usd,
+            "value_eur": amount if is_eur else (amount if is_stable else amount * price_eur),
+            "currency": "EUR" if is_eur else "USD",
         })
     insert_snapshot(conn, "kraken", rows)
     log.info("Kraken: %d assets stored", len(rows))
