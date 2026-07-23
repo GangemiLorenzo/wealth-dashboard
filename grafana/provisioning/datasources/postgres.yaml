@@ -1,0 +1,13 @@
+apiVersion: 1
+datasources:
+  - name: WealthDB
+    type: postgres
+    url: postgres:5432
+    database: wealth
+    user: wealth
+    secureJsonData:
+      password: ${POSTGRES_PASSWORD}
+    jsonData:
+      sslmode: disable
+      postgresVersion: 1500
+      timescaledb: false
