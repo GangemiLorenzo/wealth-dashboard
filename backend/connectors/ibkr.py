@@ -49,22 +49,40 @@ def get_portfolio() -> dict:
     ref = _request_statement(token, query_id)
     root = _get_statement(token, ref)
 
+    return _parse_xml(root)
+
+
+def parse_xml_file(path: str) -> dict:
+    import xml.etree.ElementTree as ET
+    root = ET.parse(path).getroot()
+    return _parse_xml(root)
+
+
+def _parse_xml(root) -> dict:
     positions = []
     for pos in root.iter("OpenPosition"):
+        if pos.get("levelOfDetail") != "SUMMARY":
+            continue
         positions.append({
             "symbol": pos.get("symbol"),
+            "description": pos.get("description"),
             "currency": pos.get("currency"),
+            "fx_to_base": float(pos.get("fxRateToBase", 1)),
             "quantity": float(pos.get("position", 0)),
-            "market_value": float(pos.get("markPrice", 0)) * float(pos.get("position", 0)),
+            "market_value": float(pos.get("positionValue", 0)),
             "cost_basis": float(pos.get("costBasisMoney", 0)),
             "unrealized_pnl": float(pos.get("fifoPnlUnrealized", 0)),
         })
 
     cash = []
-    for c in root.iter("CashReport"):
-        cash.append({
-            "currency": c.get("currency"),
-            "ending_cash": float(c.get("endingCash", 0)),
-        })
+    for c in root.iter("CashReportCurrency"):
+        if c.get("levelOfDetail") != "Currency":
+            continue
+        ending = float(c.get("endingCash", 0))
+        if ending != 0:
+            cash.append({
+                "currency": c.get("currency"),
+                "ending_cash": ending,
+            })
 
     return {"positions": positions, "cash": cash}
